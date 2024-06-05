@@ -1,0 +1,737 @@
+---
+title: "The Natural History of Hypertension in Older Adults: A Study of Two Finnish Generational Cohorts Born 20 Years Apart - systolic BP main analyses"
+output:
+  html_document: default
+#  pdf_document: default
+classoption: landscape
+date: "`r Sys.Date()`"
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#Load libraries
+library(pacman)
+
+# Load the rest
+p_load(psych, dplyr, knitr, kableExtra, here, lubridate, tidyverse, janitor, writexl)
+
+# Format the kable styling
+bs_style <- c("striped", "bordered")
+
+options(kable_styling_bootstrap_options = bs_style)
+
+```
+<br><br><br><br>
+
+
+
+# Introduce a special function that stylizes p-values
+
+The following code chunk introduces a special function that stylizes p-values.
+
+
+<br><br><br>
+```{r stylize_p}
+ stylize_p <- function(x) {
+  case_when(
+    x < 0.001 ~ "<.001",
+    x >= 0.001 & x < 0.005 ~ as.character(format(round_half_up(x, 3), nsmall = 3)),
+    
+    x >= 0.005 & x < 0.045 ~ as.character(format(round_half_up(x, 2), nsmall = 2)),
+    x >= 0.045 & x < 0.055 ~ as.character(format(round_half_up(x, 3), nsmall = 3)),
+    x >= 0.055 ~ as.character(format(round_half_up(x, 2), nsmall = 2)),
+    TRUE ~ "other"
+  )
+}
+
+
+
+```
+<br><br><br>
+  
+
+
+
+# Introduce a special function that presents mean ± sd
+
+The following code chunk introduces a special function for mean ± sd.
+
+
+<br><br><br>
+```{r meansd}
+
+ # Function to calculate mean ± sd
+mean_sd <- function(data, na.rm = TRUE) {
+  the_mean <- mean(data, na.rm = na.rm)
+  the_sd <- sd(data, na.rm = na.rm)
+  combined <- paste0(round_half_up(the_mean, digits = 1), "±", round_half_up(the_sd, digits = 1))
+  return(combined)
+}
+
+
+```
+<br><br><br>
+  
+
+
+
+
+
+# Load the datasets with the {here} package
+<br><br>
+
+
+
+```{r here_package}
+
+# Tell the "here" package where you are right now - i.e. tell the location of the file you are running right now
+
+here::i_am("article1/README.R")
+
+# After that, you can check where the project root is by running "here()"
+
+here()
+
+ 
+
+
+#  Load the datasets using {here} package
+article1tuva_file <- here("data", "a1rev_tuva.rds")
+article1utuva_file <- here("data", "a1rev_utuva.rds")
+
+article1tuva <- readRDS(article1tuva_file)
+article1utuva <- readRDS(article1utuva_file)
+
+# Clean up variables
+rm(article1tuva_file, article1utuva_file)
+
+```
+
+
+
+
+
+# Exclusion of participants in the baseline without data for SBP and/or DBP
+<br><br>
+
+We will exclude those who don't have both an SBP and a DBP reading in the baseline.
+
+TUVA1:
+
+
+```{r exclusion_tuva1, echo=FALSE}
+
+# TUVA1
+article1tuva <- article1tuva %>% drop_na(tuva1sbp, tuva1dbp)
+article1tuva %>% nrow()
+
+
+```
+
+
+UTUVA1:
+
+```{r exclusion_utuva1, echo=FALSE}
+# UTUVA1
+article1utuva <- article1utuva %>% drop_na(utuva1sbp, utuva1dbp)
+article1utuva %>% nrow()
+
+```
+
+
+
+  
+
+
+
+
+# Count the n numbers of available BP readings for Table 2
+<br><br>
+
+Store these into a vector and display the values.
+
+<br><br><br>
+```{r n_numbers}
+
+
+# TUVA1
+
+tuva1_n <- sum(!is.na(article1tuva$tuva1sbp))
+tuva1_n
+
+psych::describe(article1tuva$tuva1sbp)
+
+# TUVA2
+tuva2_n <- sum(!is.na(article1tuva$tuva2sbp))
+tuva2_n
+
+psych::describe(article1tuva$tuva2sbp)
+
+#TUVA3
+tuva3_n <- sum(!is.na(article1tuva$tuva3sbp))
+tuva3_n
+
+psych::describe(article1tuva$tuva3sbp)
+
+
+#TUVA4
+tuva4_n <- sum(!is.na(article1tuva$tuva4sbp))
+tuva4_n
+
+psych::describe(article1tuva$tuva4sbp)
+
+
+#TUVA5
+tuva5_n <- sum(!is.na(article1tuva$tuva5sbp))
+tuva5_n
+
+psych::describe(article1tuva$tuva5sbp)
+
+ 
+
+
+#UTUVA1
+utuva1_n <- sum(!is.na(article1utuva$utuva1sbp))
+utuva1_n
+
+psych::describe(article1utuva$utuva1sbp)
+
+
+
+#UTUVA2
+utuva2_n <- sum(!is.na(article1utuva$utuva2sbp))
+utuva2_n
+
+psych::describe(article1utuva$utuva2sbp)
+
+
+
+ 
+#UTUVA3
+utuva3_n <- sum(!is.na(article1utuva$utuva3sbp))
+utuva3_n
+
+psych::describe(article1utuva$utuva3sbp)
+
+```
+
+
+
+# Count mean years of the visits in different time points of TUVA and UTUVA
+<br><br>
+
+<br><br><br>
+```{r mean_year_of_TUVA1, echo=FALSE}
+
+
+tuva1_year <- year(mean(article1tuva$tuva1_date, na.rm = TRUE))
+tuva2_year <- year(mean(article1tuva$tuva2_date, na.rm = TRUE))
+tuva3_year <- year(mean(article1tuva$tuva3_date, na.rm = TRUE))
+tuva4_year <- year(mean(article1tuva$tuva4_date, na.rm = TRUE))
+tuva5_year <- year(mean(article1tuva$tuva5_date, na.rm = TRUE))
+
+utuva1_year <- year(mean(article1tuva$tuva1_date, na.rm = TRUE))
+utuva2_year <- year(mean(article1tuva$tuva2_date, na.rm = TRUE))
+utuva3_year <- year(mean(article1tuva$tuva3_date, na.rm = TRUE))
+
+
+```
+<br><br><br>
+
+ 
+ 
+
+
+# The mean SBPs of TUVA and UTUVA time points with the custom function mean_sd()
+<br><br>
+
+Pay notice that the `na.rm = TRUE` has to be present. Otherwise the `mean()` function gives only `NA`.
+
+ 
+
+```{r SBP_TUVA1}
+
+tuva1_sbp <- mean_sd(article1tuva$tuva1sbp, na.rm = TRUE)
+tuva1_sbp
+
+tuva2_sbp <- mean_sd(article1tuva$tuva2sbp, na.rm = TRUE)
+tuva2_sbp
+
+
+tuva3_sbp <- mean_sd(article1tuva$tuva3sbp, na.rm = TRUE)
+tuva3_sbp
+
+
+tuva4_sbp <- mean_sd(article1tuva$tuva4sbp, na.rm = TRUE)
+tuva4_sbp
+  
+
+tuva5_sbp <- mean_sd(article1tuva$tuva5sbp, na.rm = TRUE)
+tuva5_sbp
+
+ 
+utuva1_sbp <- mean_sd(article1utuva$utuva1sbp, na.rm = TRUE)
+utuva1_sbp
+ 
+
+utuva2_sbp <- mean_sd(article1utuva$utuva2sbp, na.rm = TRUE)
+utuva2_sbp
+
+
+utuva3_sbp <- mean_sd(article1utuva$utuva3sbp, na.rm = TRUE)
+utuva3_sbp
+
+
+
+```
+
+
+ 
+ 
+
+# The mean ages in TUVA and UTUVA time points
+<br><br>
+
+Pay notice that the `na.rm = TRUE` has to be present. Otherwise the `mean()` function gives only `NA`.
+
+ 
+
+```{r age_TUVA1}
+
+
+tuva1_age <-  article1tuva %>% drop_na(tuva1sbp) %>% select(tuva1age) %>% unlist() %>% mean_sd(., na.rm = T)
+tuva1_age
+article1tuva %>% drop_na(tuva1sbp) %>% nrow()
+
+
+
+tuva2_age <-  article1tuva %>% drop_na(tuva2sbp) %>% select(tuva2age) %>% unlist() %>% mean_sd(., na.rm = T)
+tuva2_age
+article1tuva %>% drop_na(tuva2sbp) %>% nrow()
+
+
+tuva3_age <-  article1tuva %>% drop_na(tuva3sbp) %>% select(tuva3age) %>% unlist() %>% mean_sd(., na.rm = T)
+tuva3_age
+article1tuva %>% drop_na(tuva3sbp) %>% nrow()
+
+article1tuva %>% drop_na(tuva3sbp) %>% select(tuva3age) %>% psych::describe(.)
+
+
+tuva4_age <-  article1tuva %>% drop_na(tuva4sbp) %>% select(tuva4age) %>% unlist() %>% mean_sd(., na.rm = T)
+tuva4_age
+article1tuva %>% drop_na(tuva4sbp) %>% nrow()
+
+
+
+tuva5_age <-  article1tuva %>% drop_na(tuva5sbp) %>% select(tuva5age) %>% unlist() %>% mean_sd(., na.rm = T)
+tuva5_age
+article1tuva %>% drop_na(tuva5sbp) %>% nrow()
+
+
+
+utuva1_age <-  article1utuva %>% drop_na(utuva1sbp) %>% select(utuva1age) %>% unlist() %>% mean_sd(., na.rm = T)
+utuva1_age
+article1utuva %>% drop_na(utuva1sbp) %>% nrow()
+
+
+
+utuva2_age <-  article1utuva %>% drop_na(utuva2sbp) %>% select(utuva2age) %>% unlist() %>% mean_sd(., na.rm = T)
+utuva2_age
+article1utuva %>% drop_na(utuva2sbp) %>% nrow()
+
+
+
+utuva3_age <-  article1utuva %>% drop_na(utuva3sbp) %>% select(utuva3age) %>% unlist() %>% mean_sd(., na.rm = T)
+utuva3_age
+article1utuva %>% drop_na(utuva3sbp) %>% nrow()
+
+
+```
+
+ 
+
+ 
+
+# Within cohort comparisons with the paired t-test
+<br><br>
+
+Now we run the t-tests.
+
+**It is utterly important to pay attention that these has to be paired t-tests, since we are comparing the SBPs from same individuals measured in two different time points.**
+
+
+Paired t-test TUVA1 vs TUVA2:
+
+<br><br><br>
+```{r t-test_SBPs_TUVA1_TUVA2}
+
+# Run model
+tuva1_vs_tuva2 <-t.test(article1tuva$tuva1sbp, article1tuva$tuva2sbp, paired=TRUE)
+tuva1_vs_tuva2
+
+# Extract p-value
+tuva1_vs_tuva2_p <- tuva1_vs_tuva2$p.value
+tuva1_vs_tuva2_p
+
+# Stylize
+tuva1_vs_tuva2_p <- stylize_p(tuva1_vs_tuva2_p)
+
+```
+<br><br><br>
+
+ 
+ 
+ Paired t-test TUVA1 vs TUVA3:
+
+ 
+<br><br><br>
+```{r t-test_SBPs_TUVA1_TUVA3}
+
+# Run model
+tuva1_vs_tuva3 <-t.test(article1tuva$tuva1sbp, article1tuva$tuva3sbp, paired=TRUE)
+tuva1_vs_tuva3
+
+# Extract p-value
+tuva1_vs_tuva3_p <- tuva1_vs_tuva3$p.value
+tuva1_vs_tuva3_p
+
+# Stylize
+tuva1_vs_tuva3_p <- stylize_p(tuva1_vs_tuva3_p)
+
+```
+<br><br><br>
+
+Paired t-test TUVA1 vs TUVA4:
+
+
+```{r t-test_SBPs_TUVA1_TUVA4}
+
+ 
+# Run model
+tuva1_vs_tuva4 <-t.test(article1tuva$tuva1sbp,  article1tuva$tuva4sbp, paired=TRUE)
+tuva1_vs_tuva4
+
+# Extract p-value
+tuva1_vs_tuva4_p <- tuva1_vs_tuva4$p.value
+tuva1_vs_tuva4_p
+
+# Stylize
+tuva1_vs_tuva4_p <- stylize_p(tuva1_vs_tuva4_p)
+
+```
+<br><br><br>
+
+Paired t-test TUVA1 vs TUVA5:
+
+```{r t-test_SBPs_TUVA1_TUVA5}
+
+ 
+# Run model
+tuva1_vs_tuva5 <-t.test(article1tuva$tuva1sbp, article1tuva$tuva5sbp, paired=TRUE)
+tuva1_vs_tuva5
+
+# Extract p-value
+tuva1_vs_tuva5_p <- tuva1_vs_tuva5$p.value
+tuva1_vs_tuva5_p
+
+# Stylize
+tuva1_vs_tuva5_p <- stylize_p(tuva1_vs_tuva5_p)
+
+```
+
+Paired t-test UTUVA1 vs UTUVA2:
+
+
+
+```{r t-test_SBPs_UTUVA1_UTUVA2}
+ 
+ 
+# Run model
+utuva1_vs_utuva2 <-t.test(article1utuva$utuva1sbp, article1utuva$utuva2sbp, paired=TRUE)
+
+utuva1_vs_utuva2
+
+# Extract p-value
+utuva1_vs_utuva2_p <- utuva1_vs_utuva2$p.value
+utuva1_vs_utuva2_p
+
+# Stylize
+utuva1_vs_utuva2_p <- stylize_p(utuva1_vs_utuva2_p)
+
+
+```
+
+
+Paired t-test UTUVA1 vs UTUVA3:
+
+
+```{r t-test_SBPs_UTUVA1_UTUVA3}
+ 
+  
+# Run model
+utuva1_vs_utuva3 <-t.test(article1utuva$utuva1sbp, article1utuva$utuva3sbp, paired=TRUE)
+
+utuva1_vs_utuva3
+
+# Extract p-value
+utuva1_vs_utuva3_p <- utuva1_vs_utuva3$p.value
+utuva1_vs_utuva3_p
+ 
+# Stylize
+utuva1_vs_utuva3_p <- stylize_p(utuva1_vs_utuva3_p)
+
+
+```
+
+
+# Comparison of SBPs between cohorts with un-paired t-tests
+<br><br>
+
+Let us start by counting:
+
+1. the mean SBPs for TUVA1 and UTUVA1
+2. their subtraction
+
+<br><br><br>
+```{r subtraction_SBPs_TUVA1_UTUVA1}
+ 
+tuva1_utuva1_subtraction <- mean(article1tuva$tuva1sbp, na.rm = TRUE) - mean(article1utuva$utuva1sbp, na.rm = TRUE)
+
+```
+<br><br><br>
+ 
+Thereafter, let us run the un-paired t-test.
+
+(paired=FALSE)
+ 
+
+<br><br><br>
+```{r t-test_SBPs_TUVA1_UTUVA1}
+ 
+# Run model
+tuva1_vs_utuva1 <-t.test(article1tuva$tuva1sbp, article1utuva$utuva1sbp, paired=FALSE)
+
+tuva1_vs_utuva1
+
+# Extract p-value
+tuva1_vs_utuva1_p <- tuva1_vs_utuva1$p.value
+tuva1_vs_utuva1_p
+
+# Stylize
+tuva1_vs_utuva1_p <- stylize_p(tuva1_vs_utuva1_p)
+  
+```
+<br><br><br>
+
+
+Subtraction of means of TUVA2 and UTUVA3
+
+<br><br><br>
+```{r subtraction_SBPs_TUVA2_UTUVA3}
+ 
+tuva2_utuva3_subtraction <- mean(article1tuva$tuva2sbp, na.rm = TRUE) - mean(article1utuva$utuva3sbp, na.rm = TRUE)
+
+```
+<br><br><br>
+
+t-test UTUVA3 vs TUVA2:
+
+```{r t-test_SBPs_TUVA2_UTUVA3}
+ 
+# Run model
+tuva2_vs_utuva3 <-t.test(article1tuva$tuva2sbp, article1utuva$utuva3sbp, paired=FALSE)
+
+tuva2_vs_utuva3
+
+# Extract p-value
+tuva2_vs_utuva3_p <- tuva2_vs_utuva3$p.value
+tuva2_vs_utuva3_p
+
+# Stylize
+tuva2_vs_utuva3_p <- stylize_p(tuva2_vs_utuva3_p)
+
+```
+
+
+
+
+
+# Compose Table 2 of the results
+
+
+<br><br><br>
+```{r table2}
+ 
+##################################################################
+##                             TUVA                             ##
+##################################################################
+
+
+table2_part1 <- 
+tibble::tribble(
+  ~Cohort,    ~I, ~II,  ~III,   ~IV,    ~V,   ~VI,
+  "Year",  tuva1_year, 0, tuva2_year, tuva3_year, tuva4_year, tuva5_year,
+    "n", tuva1_n, 0, tuva2_n, tuva3_n, tuva4_n, tuva5_n,
+  )# %>% as.data.frame()
+
+table2_part1 <- table2_part1 %>% 
+  mutate(across(where(is.numeric), ~ round_half_up(., digits = 0))) %>% 
+  mutate(across(where(is.numeric), ~ as.character(.)))
+
+
+table2_part2a <- 
+tibble::tribble(
+  ~Cohort,    ~I, ~II,  ~III,   ~IV,    ~V,   ~VI,
+    "Mean age (years)", tuva1_age, NA,  tuva2_age, tuva3_age, tuva4_age, tuva5_age
+  ) #%>% as.data.frame()
+
+# table2_part2a <- table2_part2a %>%
+#   mutate(across(where(is.numeric), ~ round_half_up(., digits = 1))) %>%
+#   mutate(across(where(is.numeric), ~ as.character(.)))
+
+table2_part2b <- 
+tibble::tribble(
+  ~Cohort,    ~I, ~II,  ~III,   ~IV,    ~V,   ~VI,
+   "SBP (mmHg)", tuva1_sbp, 0, tuva2_sbp, tuva3_sbp, tuva4_sbp, tuva5_sbp
+  ) #%>% as.data.frame()
+
+
+
+
+table2_part3 <- 
+tibble::tribble(
+  ~Cohort,    ~I, ~II,  ~III,   ~IV,    ~V,   ~VI,
+   "p-value", "", "", tuva1_vs_tuva2_p, tuva1_vs_tuva3_p, tuva1_vs_tuva4_p, tuva1_vs_tuva5_p
+  )
+
+
+#################################################################
+##                            UTUVA                            ##
+#################################################################
+
+table2_part4 <- 
+tibble::tribble(
+  ~Cohort,    ~I, ~II,  ~III,   ~IV,    ~V,   ~VI,
+  "Year",  utuva1_year, utuva2_year, utuva3_year, NA, NA, NA,
+    "n", utuva1_n, utuva2_n, utuva3_n, NA, NA, NA
+  )
+
+table2_part4 <- table2_part4 %>% 
+  mutate(across(where(is.numeric), ~ round_half_up(., digits = 0))) %>% 
+  mutate(across(where(is.numeric), ~ as.character(.)))
+
+
+
+
+table2_part5a <- 
+tibble::tribble(
+  ~Cohort,    ~I, ~II,  ~III,   ~IV,    ~V,   ~VI,
+  
+  "Mean age (years)", utuva1_age, utuva2_age, utuva3_age,  NA, NA, NA
+
+  )  
+
+# table2_part5a <- table2_part5a %>% 
+#   mutate(across(where(is.numeric), ~ round_half_up(., digits = 1))) %>% 
+#   mutate(across(where(is.numeric), ~ as.character(.)))
+
+
+
+table2_part5b <- 
+tibble::tribble(
+  ~Cohort,    ~I, ~II,  ~III,   ~IV,    ~V,   ~VI,
+
+     "SBP (mmHg)", utuva1_sbp, utuva2_sbp, utuva3_sbp, NA, NA, NA
+  )  
+
+
+
+
+table2_part6 <- 
+tibble::tribble(
+  ~Cohort,    ~I, ~II,  ~III,   ~IV,    ~V,   ~VI,
+   "p-value", "", utuva1_vs_utuva2_p, utuva1_vs_utuva3_p, "", "", ""
+  )
+
+ 
+table2_part7 <- 
+tibble::tribble(
+  ~Cohort,    ~I, ~II,  ~III,   ~IV,    ~V,   ~VI,
+   "Difference in SBP between cohorts (mmHg)", tuva1_utuva1_subtraction, "", tuva2_utuva3_subtraction, "", "", ""
+  )
+
+ 
+table2_part7 <- table2_part7 %>% 
+  mutate(across(where(is.numeric), ~ round_half_up(., digits = 1))) %>% 
+  mutate(across(where(is.numeric), ~ as.character(.)))
+
+ 
+
+table2_part8 <- 
+tibble::tribble(
+  ~Cohort,    ~I, ~II,  ~III,   ~IV,    ~V,   ~VI,
+   "p-value", tuva1_vs_utuva1_p, "", tuva2_vs_utuva3_p, "", "", ""
+  )
+
+table2 <- 
+rbind(table2_part1,
+table2_part2a,
+table2_part2b,
+table2_part3,
+table2_part4,
+table2_part5a,
+table2_part5b,
+table2_part6,
+table2_part7,
+table2_part8)
+
+
+table2 <- table2 %>% add_row(Cohort="TUVA",
+                             I="",
+                             II="",
+                             III="",
+                             IV="",
+                             V="",
+                             VI="",
+                           .before=1)
+
+ table2 <- table2 %>% add_row(Cohort="UTUVA",
+                              I="",
+                              II="",
+                              III="",
+                              IV="",
+                              V="",
+                              VI="",
+                            .before=7)
+
+
+
+
+table2 %>% kable() %>% kable_styling()
+
+
+```
+<br><br><br>
+ 
+
+
+
+
+
+# Export to excel
+
+```{r exportexcel}
+  
+
+# Export to Excel file
+write_xlsx(table2, "article1_table2_sbp_revision.xlsx")
+
+
+
+```
+
+
+

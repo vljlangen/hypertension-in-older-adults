@@ -10,7 +10,13 @@
 library(pacman)
 p_load(dplyr, tidyverse, bannerCommenter,
        lubridate, janitor, tableone, psych,
-       flextable)
+       flextable, officer)
+
+# Import data
+
+tuva <- readRDS("data/article1tuva_bp_meds_final.rds")
+utuva <- readRDS("data/article1utuva_bp_meds_final.rds")
+
 
 
 ###########################################################################
@@ -21,21 +27,26 @@ p_load(dplyr, tidyverse, bannerCommenter,
 ###########################################################################
 ###########################################################################
 
+
 # TUVA1
-tuva_elig <- tuva %>% drop_na(SRR_70_istuen, SRRD_70_istuen)
+tuva_elig <- tuva %>% drop_na(tuva1sbp, tuva1dbp)
 tuva_n <- tuva_elig %>% nrow()
-
-# Store the initial survey year into a vector
-
-
-
-
+tuva_n
 
 
 # UTUVA1
 
-utuva_elig <- utuva %>% drop_na(B8_3_A7isys_U70, B8_3_A7idia_U70)
+utuva_elig <- utuva %>% drop_na(utuva1sbp, utuva1dbp)
 utuva_n <- utuva_elig %>% nrow()
+utuva_n
+
+
+# Store the initial survey year into a vector
+
+ 
+
+
+
 
 
 ############################################################################
@@ -49,13 +60,13 @@ utuva_n <- utuva_elig %>% nrow()
 
 # TUVA1
 
-tuva_elig$PAIVAMA_70_PVM %>% head
+tuva_elig$tuva1_date %>% head
 
 initial_survey_year_tuva <- paste0(
   
-  year(min(tuva_elig$PAIVAMA_70_PVM, na.rm = T)),
+  year(min(tuva_elig$tuva1_date, na.rm = T)),
   "\u2013",
-  year(max(tuva_elig$PAIVAMA_70_PVM, na.rm = T))
+  year(max(tuva_elig$tuva1_date, na.rm = T))
 )
 
 # Confirm
@@ -64,17 +75,26 @@ initial_survey_year_tuva
 
 
 
-# UTUVA2
+# UTUVA1
 
-# Convert exam date to date format
-utuva_elig$B8_3_PVM_U70 <- as.Date(utuva_elig$B8_3_PVM_U70, format = "%d.%m.%Y")
 
+
+# # Convert exam date to date format
+# utuva_elig$B8_3_PVM_U70 <- as.Date(utuva_elig$B8_3_PVM_U70, format = "%d.%m.%Y")
+# 
+# 
+# 
+# # There is one erroneous date:
+# head(sort(year(utuva_elig$B8_3_PVM_U70)))
+
+
+utuva_elig$utuva1_date %>% head
 
 initial_survey_year_utuva <- paste0(
   
-  year(min(utuva_elig$B8_3_PVM_U70, na.rm = T)),
+  year(min(utuva_elig$utuva1_date, na.rm = T)),
   "\u2013",
-  year(max(utuva_elig$B8_3_PVM_U70, na.rm = T))
+  year(max(utuva_elig$utuva1_date, na.rm = T))
 )
 
 # Confirm
@@ -89,24 +109,25 @@ initial_survey_year_utuva
 ###                                                                     ###
 ###########################################################################
 ###########################################################################
+ 
 
 # Mutate a new variable for pathological RR values
 tuva_elig <- tuva_elig %>% 
   mutate(`Hypertensive blood pressure reading` = ifelse(
-            SRR_70_istuen >= 140 | SRRD_70_istuen >= 90, 1, 0))
+    tuva1sbp >= 140 | tuva1dbp >= 90, 1, 0))
 
 
 # Retain only necessary variables
-tuva_elig <- tuva_elig %>% select(IKA_tutkpvm_70, SUKUPUOLI, SRR_70_istuen,
-                                  SRRD_70_istuen, `Hypertensive blood pressure reading`,
-                                  hypertension, antihypertensive_med)
+tuva_elig <- tuva_elig %>% select(IKA_tutkpvm_70, SUKUPUOLI, tuva1sbp,
+                                  tuva1dbp, `Hypertensive blood pressure reading`,
+                                  hypertension_tuva1, antihypertensive_med)
 
 # Convert categorical variables into factor
 tuva_elig <- tuva_elig %>% mutate(SUKUPUOLI =
                                     factor(SUKUPUOLI, levels = c(1, 2), labels = c("Men", "Women")))
 
-tuva_elig <- tuva_elig %>% mutate(hypertension =
-                                    factor(hypertension, levels = c(1, 0), labels = c("Yes", "No")))
+tuva_elig <- tuva_elig %>% mutate(hypertension_tuva1 =
+                                    factor(hypertension_tuva1, levels = c(1, 0), labels = c("Yes", "No")))
 
 
 tuva_elig <- tuva_elig %>% mutate(antihypertensive_med =
@@ -120,9 +141,9 @@ tuva_elig <- tuva_elig %>% mutate(`Hypertensive blood pressure reading` =
 # Rename with nice names
 tuva_elig <- tuva_elig %>% rename(`Age (years)` = IKA_tutkpvm_70,
                                   `Sex` = SUKUPUOLI,
-                                  `Systolic blood pressure (mmHg)` = SRR_70_istuen,
-                                  `Diastolic blood pressure (mmHg)` = SRRD_70_istuen,
-                                  `Prevalent hypertension` = hypertension,
+                                  `Systolic blood pressure (mmHg)` = tuva1sbp,
+                                  `Diastolic blood pressure (mmHg)` = tuva1dbp,
+                                  `Prevalent hypertension` = hypertension_tuva1,
                                   `Use of any antihypertensive medication` = antihypertensive_med)
 
 
@@ -166,51 +187,25 @@ is.Date(utuva_elig$SyntPVM)
 # # Convert exam date to date format
 # utuva_elig$B8_3_PVM_U70 <- as.Date(utuva_elig$B8_3_PVM_U70, format = "%d.%m.%Y")
 
-# Confirm
-is.Date(utuva_elig$B8_3_PVM_U70)
+# Confirm that study date is in Date format
+is.Date(utuva_elig$utuva1_date)
 
 # Calculate age
-utuva_elig$age <- as.numeric(difftime(utuva_elig$B8_3_PVM_U70, utuva_elig$SyntPVM, units = "days") / 365.25)
+utuva_elig$age <- as.numeric(difftime(utuva_elig$utuva1_date, utuva_elig$SyntPVM, units = "days") / 365.25)
 
-# Turns out that one age has erroneous data (age = 61.4 years)
-min(utuva_elig$age)
-
-# Identify that person
-utuva_elig %>% select(ID1991, ID2011, SyntPVM, B8_3_PVM_U70, age) %>%  filter(age < 65 )
-
-# (The person has for ID2011 the value 665)
+# Corfirm that age looks OK
+utuva_elig$age %>% psych::describe()
 
 
-# The exam date year is wrong. When we sort the data, the correct year is with almost
-# 100% surity "2011":
-sort(utuva_elig$B8_3_PVM_U70) %>% head()
-max(utuva_elig$B8_3_PVM_U70)
-
-# Correct that cell of data with Base R
-#
-#Find the row index where ID matches the erroneous_ID
-#
-row_index <- which(utuva_elig$ID2011 == 665)
-
-# Identify the column index
-column_index <- which(colnames(utuva_elig) == "B8_3_PVM_U70")
+initial_survey_year_utuva <- paste0(
+  
+  year(min(utuva_elig$utuva1_date, na.rm = T)),
+  "\u2013",
+  year(max(utuva_elig$utuva1_date, na.rm = T))
+)
 
 # Confirm
-utuva_elig[row_index, column_index]
-
-# Correct the erroneous value
-correct_date <- as.Date("2011-11-18", format = "%Y-%m-%d")
-is.Date(correct_date)
-
-utuva_elig[row_index, column_index] <- correct_date
-
-# Confirm
-utuva_elig[row_index, column_index]
-is.Date(utuva_elig$B8_3_PVM_U70)
-
-# Recalculate ages
-utuva_elig$age <- as.numeric(difftime(utuva_elig$B8_3_PVM_U70, utuva_elig$SyntPVM, units = "days") / 365.25)
-
+initial_survey_year_utuva
 
 
  
@@ -221,13 +216,13 @@ utuva_elig$age <- as.numeric(difftime(utuva_elig$B8_3_PVM_U70, utuva_elig$SyntPV
 # Mutate a new variable for pathological RR values
 utuva_elig <- utuva_elig %>% 
   mutate(`Hypertensive blood pressure reading` = ifelse(
-    B8_3_A7isys_U70 >= 140 | B8_3_A7idia_U70 >= 90, 1, 0))
+    utuva1sbp >= 140 | utuva1dbp >= 90, 1, 0))
 
 
 # Retain only necessary variables
-utuva_elig <- utuva_elig %>% select(age, SUKUPUOLI, B8_3_A7isys_U70,
-                                    B8_3_A7idia_U70, `Hypertensive blood pressure reading`,
-                                    hypertension, antihypertensive_med)
+utuva_elig <- utuva_elig %>% select(age, SUKUPUOLI, utuva1sbp,
+                                    utuva1dbp, `Hypertensive blood pressure reading`,
+                                    hypertension_utuva1, antihypertensive_med)
 
 
 
@@ -235,8 +230,8 @@ utuva_elig <- utuva_elig %>% select(age, SUKUPUOLI, B8_3_A7isys_U70,
 utuva_elig <- utuva_elig %>% mutate(SUKUPUOLI =
                                     factor(SUKUPUOLI, levels = c(1, 2), labels = c("Men", "Women")))
 
-utuva_elig <- utuva_elig %>% mutate(hypertension =
-                                    factor(hypertension, levels = c(1, 0), labels = c("Yes", "No")))
+utuva_elig <- utuva_elig %>% mutate(hypertension_utuva1 =
+                                    factor(hypertension_utuva1, levels = c(1, 0), labels = c("Yes", "No")))
 
 
 utuva_elig <- utuva_elig %>% mutate(antihypertensive_med =
@@ -250,9 +245,9 @@ utuva_elig <- utuva_elig %>% mutate(`Hypertensive blood pressure reading` =
 # Rename with nicer names
 utuva_elig <- utuva_elig %>% rename(`Age (years)` = age,
                                   `Sex` = SUKUPUOLI,
-                                  `Systolic blood pressure (mmHg)` = B8_3_A7isys_U70,
-                                  `Diastolic blood pressure (mmHg)` = B8_3_A7idia_U70,
-                                  `Prevalent hypertension` = hypertension,
+                                  `Systolic blood pressure (mmHg)` = utuva1sbp,
+                                  `Diastolic blood pressure (mmHg)` = utuva1dbp,
+                                  `Prevalent hypertension` = hypertension_utuva1,
                                   `Use of any antihypertensive medication` = antihypertensive_med)
 
 
@@ -426,7 +421,7 @@ ft <- ft %>% add_footer_lines(
   
   as_sup("a"), "Hypertensive blood pressure reading was defined as either having a systolic blood pressure ≥140 mmHg or diastolic blood pressure ≥90 mmHg. ",
   
-  as_sup("b"), "Hypertension was defined as either having a hypertensive blood pressure reading or confirmed use of antihypertensive medication."))
+  as_sup("b"), "Hypertension was defined as either having uncontrolled BP, self-reported hypertension, or confirmed use of antihypertensive medication without indications other than hypertension."))
 
 # Edit footer font size
 ft <- fontsize(ft, size = 12, part = "footer")

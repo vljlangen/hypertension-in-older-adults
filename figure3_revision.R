@@ -1,16 +1,16 @@
 library(pacman)
-p_load(dplyr, tidyr, ggplot2, ggthemes, ggsignif, cowplot, here, showtext)
+p_load(dplyr, tidyr, ggplot2, ggthemes, ggsignif, cowplot, here, showtext, magick)
  
 
 # Tell the "here" package where you are right now - i.e. tell the location of the file you are running right now
-here::i_am("article1/figure3.R")
+here::i_am("article1/README.R")
 
 # After that, you can check where the project root is by running "here()"
 here()
 
 #  Load the datasets using {here} package
-article1tuva_file <- here("data", "article1tuva_bp_meds.rds")
-article1utuva_file <- here("data", "article1utuva_bp_meds.rds")
+article1tuva_file <- here("data", "article1tuva_bp_meds_final.rds")
+article1utuva_file <- here("data", "article1utuva_bp_meds_final.rds")
 
 tuva <- readRDS(article1tuva_file)
 utuva <- readRDS(article1utuva_file)
@@ -30,8 +30,9 @@ rm(article1tuva_file, article1utuva_file)
 
 
 
+
 # TUVA1
-tuva <- tuva %>% drop_na(SRR_70_istuen, SRRD_70_istuen)
+tuva <- tuva %>% drop_na(tuva1sbp, tuva1dbp)
 
 # Check how many remained
 tuva %>% nrow()
@@ -39,11 +40,12 @@ tuva %>% nrow()
 
 # UTUVA1
 
-utuva <- utuva %>% drop_na(B8_3_A7isys_U70, B8_3_A7idia_U70)
+utuva <- utuva %>% drop_na(utuva1sbp, utuva1dbp)
 
 # Check how many remained
 utuva %>% nrow()
 
+ 
 
 
 ############################################################################
@@ -60,13 +62,13 @@ utuva %>% nrow()
 # Mutate a new variable for pathological RR values
 tuva <- tuva %>% 
   mutate(hypertensive_bp = ifelse(
-    SRR_70_istuen >= 140 | SRRD_70_istuen >= 90, 1, 0))
+    tuva1sbp >= 140 | tuva1dbp >= 90, 1, 0))
 
 
 # Mutate a new variable for pathological RR values
 utuva <- utuva %>% 
   mutate(hypertensive_bp = ifelse(
-    B8_3_A7isys_U70 >= 140 | B8_3_A7idia_U70 >= 90, 1, 0))
+    utuva1sbp >= 140 | utuva1dbp >= 90, 1, 0))
 
 
 
@@ -85,7 +87,7 @@ utuva <- utuva %>%
 # Select only binary drug data
 tuva_meds <- tuva %>% select(ID1991,
                              hypertensive_bp,
-                             hypertension,
+                             hypertension_tuva1,
                              antihypertensive_med,
                              ACEi,
                              ARB,
@@ -93,6 +95,8 @@ tuva_meds <- tuva %>% select(ID1991,
                              CCB,
                              diuretic,
                              other_bp_medicine)
+
+tuva_meds <- tuva_meds %>% rename(hypertension = hypertension_tuva1)
 
 # Name the cohort
 tuva_meds$cohort <- "TUVA"
@@ -105,7 +109,7 @@ tuva_meds <- tuva_meds %>%  select(ID1991, cohort, everything())
 # Select only binary drug data
 utuva_meds <- utuva %>% select(ID1991,
                                hypertensive_bp,
-                               hypertension,
+                               hypertension_utuva1,
                                antihypertensive_med,
                                ACEi,
                                ARB,
@@ -113,6 +117,8 @@ utuva_meds <- utuva %>% select(ID1991,
                                CCB,
                                diuretic,
                                other_bp_medicine)
+
+utuva_meds <- utuva_meds %>% rename(hypertension = hypertension_utuva1)
 
 # Name the cohort
 utuva_meds$cohort <- "UTUVA"
@@ -338,12 +344,20 @@ pdf_file <- here("article1", "Fig3_dpi600.pdf")
   
 
 
-# Save as PNG with dpi specified
-#ggsave(png_file, fig3, dpi = 600, bg = "white", width = 14, height = 6)
-
-
 # Save as PDF with dpi specified
 ggsave(pdf_file, fig3, dpi = 600, width = 14, height = 6)
+
+
+# Load the PDF back with {here} and {magick} packages
+pdf_image <- magick::image_read_pdf(pdf_file, density = 600)
+
+# Save it as PNG
+image_write(pdf_image,
+            path = png_file,
+            format = "png",
+            density = 600)
+
+
 
 
 

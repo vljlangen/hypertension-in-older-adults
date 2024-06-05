@@ -1,0 +1,397 @@
+---
+title: "The Natural History of Hypertension in Older Adults: A Study of Two Finnish Generational Cohorts Born 20 Years Apart - systolic BP analyses"
+output: html_document
+classoption: landscape
+date: "`r Sys.Date()`"
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load packages
+
+# First pacman
+library(pacman)
+
+# Load the rest
+p_load(ggplot2, ggthemes, dplyr, knitr, kableExtra, here, tidyverse,
+       magick, showtext, lubridate)
+
+
+ 
+# Tell the "here" package where you are right now - i.e. tell the location of the file you are running right now
+
+here::i_am("article1/README.R")
+
+# After that, you can check where the project root is by running "here()"
+
+here()
+
+#  Load the datasets using {here} package
+article1tuva_file <- here("data", "a1rev_tuva.rds")
+article1utuva_file <- here("data", "a1rev_utuva.rds")
+
+article1tuva <- readRDS(article1tuva_file)
+article1utuva <- readRDS(article1utuva_file)
+
+# Clean up variables
+rm(article1tuva_file, article1utuva_file)
+
+
+# Format the kable styling
+bs_style <- c("striped", "bordered")
+
+options(kable_styling_bootstrap_options = bs_style)
+
+```
+<br><br><br><br>
+ 
+
+
+
+
+# Exclusion of participants in the baseline without data for SBP and/or DBP
+<br><br>
+
+Exclusions done already in the preparatory RDS file. No need to run them here.
+
+ 
+
+
+# Introduce a custom function to calculate 95% confidence intervals
+
+There is no ready function in R to calculate 95% CIs. However, such a custom function can be easily made. We only need a function for the upper bound (lower can be calculated later on the spot).
+ 
+<br>
+```{r custom_function}
+
+ci_95_upper <- function(x) {
+  ci <- t.test(x, na.action = na.omit)$conf.int
+  upper_bound <- ci[2]
+  return(upper_bound)
+}
+ 
+
+```
+<br><br><br>
+
+
+
+
+# Introduce a custom function to a mean year from a date variable
+
+There is no ready function in R to calculate 95% CIs. However, such a custom function can be easily made. We only need a function for the upper bound (lower can be calculated later on the spot).
+ 
+<br>
+```{r mean_year}
+
+# Define the function
+mean_year <- function(date_variable) {
+  # Calculate the mean of the date variable, ignoring NA values
+  mean_date_numeric <- mean(as.numeric(date_variable), na.rm = TRUE)
+  
+  # Convert the numeric mean date to a Date object
+  mean_date <- as.Date(mean_date_numeric, origin = "1970-01-01")
+  
+  # Extract and return the year from the mean date
+  return(year(mean_date))
+} 
+
+```
+<br><br><br>
+
+ 
+ 
+# Calculate means and 95% confidence intervals for plotting
+
+Note that only one of the 95% CI bounds is needed for the plot (the other can be calculated on the spot)
+
+## First, calculate statistics for Tuva
+
+<br>
+```{r statistics_tuva_part1}
+
+ 
+
+
+# Calculate mean and SD of tuva1
+SBP70_tuva_mean <- mean(article1tuva$tuva1sbp, na.rm = T)
+SBP70_tuva_mean
+
+SBP70_tuva_upper <- ci_95_upper(article1tuva$tuva1sbp)
+SBP70_tuva_upper
+
+
+
+# Mean and SD of tuva2
+SBP80_tuva_mean <- mean(article1tuva$tuva2sbp, na.rm = T)
+SBP80_tuva_mean
+
+SBP80_tuva_upper <- ci_95_upper(article1tuva$tuva2sbp)
+SBP80_tuva_upper
+
+
+
+# Mean and SD of tuva3
+SBP85_tuva_mean <- mean(article1tuva$tuva3sbp, na.rm = T)
+SBP85_tuva_mean
+
+SBP85_tuva_upper <- ci_95_upper(article1tuva$tuva3sbp)
+SBP85_tuva_upper
+
+
+
+# Mean of tuva4
+SBP90_tuva_mean <- mean(article1tuva$tuva4sbp, na.rm = T)
+SBP90_tuva_mean
+
+SBP90_tuva_upper <- ci_95_upper(article1tuva$tuva4sbp)
+SBP90_tuva_upper
+
+# Mean and SD of tuva5
+SBP95_tuva_mean <- mean(article1tuva$tuva5sbp, na.rm = T)
+SBP95_tuva_mean
+
+SBP95_tuva_upper <- ci_95_upper(article1tuva$tuva5sbp)
+SBP95_tuva_upper
+
+
+```
+
+  
+
+## Thereafter for utuva
+
+<br>
+```{r statistics_utuva}
+
+
+##################################################################
+##          Calculate means for Utuva, store in vectors         ##
+##################################################################
+
+
+# UTUVA 1
+
+SBP70_utuva_mean <- mean(article1utuva$utuva1sbp, na.rm = T)
+SBP70_utuva_mean
+
+SBP70_utuva_upper <- ci_95_upper(article1utuva$utuva1sbp)
+SBP70_utuva_upper
+
+
+# UTUVA 2
+  
+SBP75_utuva_mean <- mean(article1utuva$utuva2sbp, na.rm = T)
+SBP75_utuva_mean
+
+SBP75_utuva_upper <- ci_95_upper(article1utuva$utuva2sbp)
+SBP75_utuva_upper
+
+
+# UTUVA 3
+  
+SBP80_utuva_mean <- mean(article1utuva$utuva3sbp, na.rm = T)
+SBP80_utuva_mean
+
+SBP80_utuva_upper <- ci_95_upper(article1utuva$utuva3sbp)
+SBP80_utuva_upper
+
+
+```
+<br><br><br>
+
+
+# Store the statistics that were created above to a custom data frame (to a tribble)
+
+<br>
+```{r tribble}
+
+
+
+tuva1age <- 70.9
+tuva2age <- 80.2
+tuva3age <- 85.5
+tuva4age <- 89.5
+tuva5age <- 94.9
+
+utuva1age <- 71.4
+utuva2age <- 76.2
+utuva3age <- 81.5
+
+
+
+data_for_plot <- 
+
+tibble::tribble(
+  ~Age,       ~Cohort,                 ~SBP_mean,        ~upperCI,
+   tuva1age,  "1920-born TUVA cohort",  SBP70_tuva_mean,  SBP70_tuva_upper,
+   tuva2age,  "1920-born TUVA cohort",  SBP80_tuva_mean,  SBP80_tuva_upper,
+   tuva3age,  "1920-born TUVA cohort",  SBP85_tuva_mean,  SBP85_tuva_upper,
+   tuva4age,  "1920-born TUVA cohort",  SBP90_tuva_mean,  SBP90_tuva_upper,
+   tuva5age,  "1920-born TUVA cohort",  SBP95_tuva_mean,  SBP95_tuva_upper,
+  utuva1age, "1940-born UTUVA cohort", SBP70_utuva_mean,   SBP70_utuva_upper,
+  utuva2age, "1940-born UTUVA cohort", SBP75_utuva_mean,   SBP75_utuva_upper,
+  utuva3age, "1940-born UTUVA cohort", SBP80_utuva_mean,   SBP80_utuva_upper
+  )
+
+
+data_for_plot <- data_for_plot %>% mutate(lowerCI = SBP_mean-upperCI+SBP_mean)
+
+uplabel1 <- data_for_plot$upperCI[1] + 2
+uplabel2 <- data_for_plot$upperCI[2] + 2
+uplabel3 <- data_for_plot$upperCI[3] + 2
+uplabel4 <- data_for_plot$upperCI[4] + 2
+uplabel5 <- data_for_plot$upperCI[5] + 2
+
+downlabel1 <- data_for_plot$lowerCI[6] -1.8
+downlabel2 <- data_for_plot$lowerCI[7] -1.8
+downlabel3 <- data_for_plot$lowerCI[8] -1.8
+
+
+```
+<br><br><br>
+
+
+# Calculate mean years
+
+
+```{r}
+
+# TUVA
+tuva1year <- mean_year(article1tuva$tuva1_date)
+tuva2year <- mean_year(article1tuva$tuva2_date)
+tuva3year <- mean_year(article1tuva$tuva3_date)
+tuva4year <- mean_year(article1tuva$tuva4_date)
+tuva5year <- mean_year(article1tuva$tuva5_date)
+
+# UTUVA
+utuva1year <- mean_year(article1utuva$utuva1_date)
+utuva2year <- mean_year(article1utuva$utuva2_date)
+utuva3year <- mean_year(article1utuva$utuva3_date)
+
+
+```
+
+# Finally, create the plot
+ 
+<br>
+```{r fig1}
+
+
+# Load specific font from Google Fonts
+font_add_google("Rosario", family = "rosario")
+
+# Invoke showtext
+showtext_auto()
+
+# Define your custom colors
+
+custom_colors <- c("1920-born TUVA cohort" = "#5C7DB2", "1940-born UTUVA cohort" = "#E29A3F")
+shape_mapping <- c("1920-born TUVA cohort" = 19, "1940-born UTUVA cohort" = 15)  
+
+
+fig1 <-
+ggplot(data_for_plot, aes(x = Age, y = SBP_mean, color = Cohort, shape = Cohort)) +
+  
+  geom_line(linewidth = 0.8) +
+
+  geom_point(size = 2.5) +
+  
+  scale_shape_manual(values = shape_mapping) + # Apply the shape mapping
+
+  geom_errorbar(aes(ymin=SBP_mean-upperCI+SBP_mean,
+                    ymax=upperCI),
+                width=0.4,
+                size=0.8,
+                ) +  
+ 
+  scale_color_manual(values = custom_colors) +  # Manually set fill colors
+
+   
+  labs(x = "Age", y = "SBP mean") +
+
+  theme_classic(base_size = 15, base_family = "rosario") +  
+    
+
+  theme(
+    legend.position = c(.212, .96)) +
+  
+   
+  theme(legend.title=element_blank()) +
+
+  
+  scale_x_continuous(breaks = seq(70, 95, 5),
+                     name = "Age (years)") +
+  scale_y_continuous(breaks = c(140, 150, 160, 170, 180), limits = c(140, 180),
+                     name = "Systolic blood pressure (mmHg)",
+                     expand = c(0, 0)) +
+
+  
+   theme(axis.title.x = element_text(face = "bold",
+    margin = margin(t = 15, unit = "pt")),  # Adjust margin for x-axis title
+    axis.title.y = element_text(face = "bold",
+      margin = margin(r = 15, unit = "pt"))) +  # Adjust margin for y-axis title
+
+  
+
+# The year labels of TUVA:
+annotate("text", x=tuva1age, y=uplabel1, label=tuva1year, color="black", size=4,
+               family = "rosario") +
+annotate("text", x=tuva2age, y=uplabel2, label=tuva2year, color="black", size=4,
+               family = "rosario") +
+annotate("text", x=tuva3age, y=uplabel3, label=tuva3year, color="black", size=4,
+               family = "rosario") +
+annotate("text", x=tuva4age, y=uplabel4, label=tuva4year, color="black", size=4,
+               family = "rosario") +
+annotate("text", x=tuva5age, y=uplabel5, label=tuva5year, color="black", size=4,
+               family = "rosario") +
+
+# The year labels of UTUVA:
+annotate("text", x=utuva1age, y=downlabel1, label=utuva1year, color="black", size=4,
+               family = "rosario") +
+annotate("text", x=utuva2age, y=downlabel2, label=utuva2year, color="black", size=4,
+               family = "rosario") +
+annotate("text", x=utuva3age, y=downlabel3, label=utuva3year, color="black", size=4,
+               family = "rosario")
+
+
+
+
+
+fig1
+
+```
+<br><br><br>
+
+
+
+# Export the fig. 1 to PDF and PNG
+
+We will conclude this R Markdown file by exporting the Fig. 1 to a PDF and PNG file.
+
+
+
+```{r export, echo=FALSE}
+
+
+# Save as PDF with dpi specified
+ggsave("Fig1_SBP_dpi600_revision.pdf", fig1, width = 7, height =5, dpi = 600)
+
+
+# Load that pdf file with the magick package
+pdf_image <- magick::image_read_pdf("Fig1_SBP_dpi600_revision.pdf", density = 600)
+
+# Save it as PNG
+image_write(pdf_image,
+            path = "Fig1_SBP_dpi600_revision.png",
+            format = "png",
+            density = 600)
+
+
+
+```
+
+ 
